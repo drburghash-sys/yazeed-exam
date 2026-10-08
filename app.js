@@ -1,4 +1,4 @@
-const QUESTIONS=[...(window.Q1||[]),...(window.Q2||[]),...(window.Q3||[]),...(window.Q4||[])],KEY='yazeed-roadmap-a2-v4';
+const QUESTIONS=[...(window.Q1||[]),...(window.Q2||[]),...(window.Q3||[]),...(window.Q4||[])],KEY='yazeed-roadmap-a2-v5';
 let state=JSON.parse(localStorage.getItem(KEY)||'{"results":{}}'),view='home',qUnit=1,qPos=0,order=[];
 const norm=s=>String(s??'').toLowerCase().replace(/[’‘`]/g,"'").replace(/[–—]/g,'-').replace(/[.,!?;:]/g,'').replace(/\s+/g,' ').replace(/\s*,\s*/g,',').trim();
 const qkey=q=>`${q.unit}-${q.exercise}-${q.n}`, done=u=>QUESTIONS.filter(q=>q.unit===u&&state.results[qkey(q)]).length, correct=u=>QUESTIONS.filter(q=>q.unit===u&&state.results[qkey(q)]?.ok).length;
@@ -29,16 +29,19 @@ function unitPage(id){
   return `<section class="card unitintro"><div class="quizhead"><div><span class="pill">Pages ${u.pages}</span><h2>Unit ${u.id} — ${u.title}</h2></div><button class="btn" onclick="startQuiz(${id})">اختبار 30 سؤالًا</button></div><p class="muted">${u.overview}</p><h4>نقاط التركيز في الاختبار</h4>${chips(u.examFocus,'english')}</section><div class="lessonstack">${u.lessons.map(lessonCard).join('')}</div>`
 }
 function quizLanding(){
-  return `<section class="card"><h2>اختبارات الكتاب</h2><p class="muted">كل وحدة = 30 بندًا من صفحة Check and reflect الخاصة بها، مع مرجع الصفحة والتمرين والسؤال. الشرح منفصل عن الاختبار حتى يعرف الطالب ما هو شرح وما هو نص السؤال.</p><div class="grid">${UNITS.map(u=>`<article class="card"><h3>Unit ${u.id}</h3><p>Page ${u.check} · 30 questions</p><p>الصحيح: <b>${correct(u.id)}</b> من <b>${done(u.id)}</b></p><button class="btn" onclick="startQuiz(${u.id})">ابدأ</button></article>`).join('')}</div><button class="btn gold" onclick="resetAll()">مسح كل النتائج</button></section>`
+  return `<section class="card"><h2>اختبارات الكتاب</h2><p class="muted">كل وحدة = 30 سؤال اختيار من متعدد (4 خيارات) من صفحة Check and reflect الخاصة بها، مع مرجع الصفحة والتمرين والسؤال. لا توجد كتابة يدوية في الاختبار.</p><div class="grid">${UNITS.map(u=>`<article class="card"><h3>Unit ${u.id}</h3><p>Page ${u.check} · 30 questions</p><p>الصحيح: <b>${correct(u.id)}</b> من <b>${done(u.id)}</b></p><button class="btn" onclick="startQuiz(${u.id})">ابدأ</button></article>`).join('')}</div><button class="btn gold" onclick="resetAll()">مسح كل النتائج</button></section>`
 }
 function startQuiz(u){qUnit=u;qPos=0;order=QUESTIONS.filter(q=>q.unit===u);view='quiz';setTab('quiz');render();scrollTo(0,0)}
 function quiz(){
   if(!order.length)return quizLanding();
   const q=order[qPos],r=state.results[qkey(q)];
   return `<section class="card"><div class="quizhead"><div><span class="pill">Unit ${qUnit}</span><h2>السؤال ${qPos+1} من 30</h2></div><div><b>${correct(qUnit)}</b> صحيح / <b>${done(qUnit)}</b> مجاب</div></div><div class="progress"><div style="width:${(qPos+1)/30*100}%"></div></div><div class="toc" style="margin-top:12px">${order.map((x,i)=>`<button class="qnum ${state.results[qkey(x)]?'done':''} ${i===qPos?'current':''}" onclick="jump(${i})">${i+1}</button>`).join('')}</div></section>
-  <section class="card"><div class="source">${q.source}</div><div class="help">${q.help||''}</div>${q.context?`<div class="context">${q.context}</div>`:''}<div class="qtext">${q.text}</div><div class="answerrow"><input id="ans" autocomplete="off" placeholder="Type your answer here" value="${r?String(r.value).replace(/"/g,'&quot;'):''}" ${r?'disabled':''}><button class="btn" onclick="check()" ${r?'disabled':''}>تحقق</button></div><div id="fb" class="feedback ${r?(r.ok?'ok':'bad'):''}">${r?(r.ok?'✓ Correct':'✗ Incorrect') : ''}${r?`<div class="key">Answer: ${q.answer}</div>`:''}</div><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn secondary" onclick="prev()" ${qPos===0?'disabled':''}>السابق</button><button class="btn secondary" onclick="reveal()">عرض الإجابة</button><button class="btn" onclick="next()">${qPos===29?'النتيجة':'التالي'}</button></div></section>`
+  <section class="card"><div class="source">${q.source}</div><div class="help">${q.help||'اختر الإجابة الصحيحة.'}</div>${q.context?`<div class="context">${q.context}</div>`:''}<div class="qtext">${q.text}</div>
+  <div class="choices">${q.options.map((o,i)=>{const chosen=r?.choice===i, isCorrect=norm(o)===norm(q.answer); const cls=r?(isCorrect?'correct':(chosen?'wrong':'')):''; return `<button class="choice english ${cls}" onclick="choose(${i})" ${r?'disabled':''}><span class="choiceLetter">${String.fromCharCode(65+i)}</span><span>${o}</span></button>`}).join('')}</div>
+  <div id="fb" class="feedback ${r?(r.ok?'ok':'bad'):''}">${r?(r.ok?'✓ Correct':'✗ Incorrect') : ''}${r?`<div class="key">Answer: ${q.answer}</div>`:''}</div>
+  <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn secondary" onclick="prev()" ${qPos===0?'disabled':''}>السابق</button><button class="btn secondary" onclick="reveal()">عرض الإجابة</button><button class="btn" onclick="next()">${qPos===29?'النتيجة':'التالي'}</button></div></section>`
 }
-function check(){const q=order[qPos],el=document.getElementById('ans'),n=norm(el.value),ok=q.accept.some(a=>norm(a)===n);state.results[qkey(q)]={value:el.value,ok};save();render()}
+function choose(i){const q=order[qPos],opt=q.options[i],ok=norm(opt)===norm(q.answer);state.results[qkey(q)]={choice:i,value:opt,ok};save();render()}
 function reveal(){const q=order[qPos],fb=document.getElementById('fb');fb.className='feedback bad';fb.innerHTML=`<div>الإجابة الصحيحة:</div><div class="key">${q.answer}</div>`}
 function prev(){if(qPos>0){qPos--;render();scrollTo(0,0)}}
 function next(){if(qPos<29){qPos++;render();scrollTo(0,0)}else finish()}
